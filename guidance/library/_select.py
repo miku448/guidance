@@ -33,15 +33,15 @@ async def select(variable_name="selected", options=None, logprobs=None, list_app
         assert options is None, "You cannot provide an options list when using the select command in block mode."
 
     if options is None:
-        with ContentCapture(variable_stack) as new_content:
-            new_content += await parser.visit(block_content[0], variable_stack)
-        options = [str(new_content)]
+        # with ContentCapture(variable_stack) as new_content:
+            # new_content += await parser.visit(block_content[0], variable_stack)
+        options = [block_content[0].content[0]]
         for i in range(1, len(block_content), 2):
             assert block_content[i][0] == "or", "You must provide a {{or}} between each option in a select block."
-            with ContentCapture(variable_stack) as new_content:
-                new_content += await parser.visit(block_content[i+1], variable_stack)
-            options.append(str(new_content))#block_content[i+1].text)
-
+            # with ContentCapture(variable_stack) as new_content:
+            #     new_content += await parser.visit(block_content[i+1], variable_stack)
+            # options.append(str(new_content))#block_content[i+1].text)
+            options.append(block_content[i+1].content[0])
     # find what text follows the select command and append it to the options.
     # we do this so we can differentiate between select options where one is a prefix of another
     next_text = next_node.text if next_node is not None else ""
@@ -119,7 +119,7 @@ async def select(variable_name="selected", options=None, logprobs=None, list_app
             # convert the logprobs keys from string back to token ids
             top_logprobs = {}
             for k,v in logprobs_result["top_logprobs"][0].items():
-                id = parser.program.llm.token_to_id(k)
+                id = parser.program.llm.encode(variable_stack["@prefix"] + k)[-1]
                 top_logprobs[id] = v
         
         # this happens if LLM does not return logprobs (like an OpenAI chat model)
